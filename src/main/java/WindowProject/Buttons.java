@@ -1,111 +1,101 @@
 package WindowProject;
 
-import LocationData.LocationDataGetters;
+import java.sql.*;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-
 import java.util.Objects;
 
 public class Buttons {
-    double displayedTemp = 0.0;
-    double displayedWindSpeed = 0.0;
-    static final String DEGREE_C = "°C";
-    static final String DEGREE_F = "°F";
+    static final String DEGREE_C = "\u00B0C"; // \u00B0 is the degrees symbol °
+    static final String DEGREE_F = "\u00B0F";
     static final String SPEED_KMH = " KM/H";
     static final String SPEED_MPH = " MPH";
 
-    LocationDataGetters Data = new LocationDataGetters();
-    void selectCityComboBox(ComboBox<String> cityComboBox, Label tempLabel, Label humidLabel, Label windLabel,
-                            ComboBox<String> convertCToF, ComboBox<String> convertKphToMph) {
+    private String cityWeather; // This variable will be used later
+    private double cityTemperature, cityWindSpeed;
+    private int cityHumidity;
 
-        double celsiusResult, humidityResult, windSpeedResult;
+    // File entrypoint. File manages behavior for button presses (including ComboBoxes)
+    // with selectCityComboBox(), convertTempButtonBox(), and convertSpeedButtonBox()
+    void selectCityComboBox(ComboBox<String> cityComboBox, Label tempLabel, Label humidLabel, Label windLabel,
+    ComboBox<String> convertCToF, ComboBox<String> convertKphToMph, Connection conn) {
         String selectedCity = cityComboBox.getValue();
 
-        switch(selectedCity) {
-            case "New York":
-                celsiusResult = Data.NewYork.Celsius;
-                humidityResult = Data.NewYork.Humidity;
-                windSpeedResult = Data.NewYork.WindSpeed;
-                break;
-            case "London":
-                celsiusResult = Data.London.Celsius;
-                humidityResult = Data.London.Humidity;
-                windSpeedResult = Data.London.WindSpeed;
-                break;
-            case "Vancouver":
-                celsiusResult = Data.Vancouver.Celsius;
-                humidityResult = Data.Vancouver.Humidity;
-                windSpeedResult = Data.Vancouver.WindSpeed;
-                break;
-            case "Heccin Wimdy":
-                celsiusResult = Data.HeccinWimdy.Celsius;
-                humidityResult = Data.HeccinWimdy.Humidity;
-                windSpeedResult = Data.HeccinWimdy.WindSpeed;
-                break;
-            default:
-                celsiusResult = 999;
-                humidityResult = 999;
-                windSpeedResult = 999;
-                break;
-        }
-
-        String CorF = DEGREE_C;
-        if("Fahrenheit".equals(convertCToF.getValue())) {
-            displayedTemp = convertTemp(celsiusResult);
-            CorF = DEGREE_F;
-        }
-        else displayedTemp = celsiusResult;
-        tempLabel.setText("Temperature: " + displayedTemp + CorF);
-
-        humidLabel.setText("Humidity: " + humidityResult + "%");
-
-        String kphOrMph = SPEED_KMH;
-        if(Objects.equals(convertKphToMph.getValue(), "MPH")) {
-            displayedWindSpeed = convertSpeed(windSpeedResult);
-            kphOrMph = SPEED_MPH;
-        }
-        else displayedWindSpeed = windSpeedResult;
-        windLabel.setText("Wind speed: " + displayedWindSpeed + kphOrMph);
+        getSelectedCityData(conn, selectedCity);
+        setWeatherData(tempLabel, humidLabel, windLabel, convertCToF, convertKphToMph);
     }
 
-    void convertTempBoxButton(ComboBox<String> convertCToF, Label tempLabel) {
+    // Grabs data for city selected in the ComboBox
+    private void getSelectedCityData(Connection conn, String selectedCity) {
+        try(Statement stmt = conn.createStatement()) {
+            stmt.execute("USE globalinfo;");
+            ResultSet sqlSelect = stmt.executeQuery("SELECT * FROM city WHERE name='" + selectedCity + "';");
+            sqlSelect.next();
+            cityWeather = sqlSelect.getString("weathertype");
+            cityTemperature = sqlSelect.getDouble("temperature");
+            cityHumidity = sqlSelect.getInt("humidity");
+            cityWindSpeed = sqlSelect.getDouble("windspeed");
+        }
+        catch(Exception e) {
+            System.out.println("Failed to get city column from continent foreign key");
+        }
+    }
+
+    // Sets the data which is displayed on-screen in the weather app
+    private void setWeatherData(Label tempLabel, Label humidLabel, Label windLabel,
+    ComboBox<String> convertCToF, ComboBox<String> convertKphToMph) {
+        // Converts cityTemperature to Fahrenheit if Fahrenheit is selected in the convertCToF ComboBox. Else, does nothing
+        String CorF = DEGREE_C;
+        if("Fahrenheit".equals(convertCToF.getValue())) {
+            cityTemperature = convertTemp(cityTemperature);
+            CorF = DEGREE_F;
+        }
+        // Set the Temperature for label with current temperature for specified city
+        tempLabel.setText("Temperature: " + cityTemperature + CorF);
+
+        // Set the Humidity for label with current humidity for specified city
+        humidLabel.setText("Humidity: " + cityHumidity + "%");
+
+        // Converts cityWindSpeed to MPH if MPH is selected in the convertKphToMph ComboBox. Else, does nothing
+        String kphOrMph = SPEED_KMH;
+        if(Objects.equals(convertKphToMph.getValue(), "MPH")) {
+            cityWindSpeed = cityWindSpeed / 1.6;
+            kphOrMph = SPEED_MPH;
+        }
+        // Set the Wind Speed for label with current wind speed for specified city
+        windLabel.setText("Wind speed: " + cityWindSpeed + kphOrMph);
+    }
+
+    // ComboBox for selecting Celsius or Fahrenheit measurements
+    void convertTempComboBox(ComboBox<String> convertCToF, Label tempLabel) {
         String CorF = DEGREE_C;
         String selectedTemp = convertCToF.getValue();
-
         switch(selectedTemp) {
             case "Celsius":
-                displayedTemp = convertTempBack(displayedTemp);
+                cityTemperature = convertTempBack(cityTemperature);
                 break;
             case "Fahrenheit":
                 CorF = DEGREE_F;
-                displayedTemp = convertTemp(displayedTemp);
+                cityTemperature = convertTemp(cityTemperature);
                 break;
         }
-        tempLabel.setText("Temperature: " + displayedTemp + CorF);
+        tempLabel.setText("Temperature: " + cityTemperature + CorF);
     }
 
-    void convertSpeedBoxButton(ComboBox<String> convertKphToMph, Label windLabel) {
+    // ComboBox for selecting Kilometers or Miles per hour
+    void convertSpeedComboBox(ComboBox<String> convertKphToMph, Label windLabel) {
         String kphOrMph = SPEED_KMH;
         String selectedSpeed = convertKphToMph.getValue();
-
         switch(selectedSpeed) {
             case "KM/H":
-                displayedWindSpeed = convertSpeedBack(displayedWindSpeed);
+                cityWindSpeed = cityWindSpeed * 1.6;
                 break;
             case "MPH":
                 kphOrMph = SPEED_MPH;
-                displayedWindSpeed = convertSpeed(displayedWindSpeed);
+                cityWindSpeed = cityWindSpeed / 1.6;
                 break;
         }
-        windLabel.setText("Wind speed: " + displayedWindSpeed + kphOrMph);
-    }
-
-    private static double convertSpeed(double WindSpeed) {
-        return WindSpeed / 1.6;
-    }
-
-    private static double convertSpeedBack(double WindSpeed) {
-        return WindSpeed * 1.6;
+        windLabel.setText("Wind speed: " + cityWindSpeed + kphOrMph);
     }
 
     private static double convertTemp(double celsius) {
