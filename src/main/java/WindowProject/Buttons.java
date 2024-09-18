@@ -5,6 +5,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import java.util.Objects;
 
+import DebugWindow.DebugWindow;
+import javafx.stage.Stage;
+
 public class Buttons {
     static final String DEGREE_C = "\u00B0C"; // \u00B0 is the degrees symbol °
     static final String DEGREE_F = "\u00B0F";
@@ -96,6 +99,11 @@ public class Buttons {
                 break;
         }
         windLabel.setText("Wind speed: " + cityWindSpeed + kphOrMph);
+    }
+
+    // Debug button for special functionality ;p
+    void debugButtonFunction() {
+        Stage debugWindow = new DebugWindow();
     }
 
     private static double convertTemp(double celsius) {

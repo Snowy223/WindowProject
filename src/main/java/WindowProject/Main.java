@@ -9,9 +9,11 @@ import java.util.Properties;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -19,8 +21,8 @@ import javafx.stage.Stage;
 ------------------------
 Example SQL setup:
 
-Create SQL database:    CREATE DATABASE globalinfo;"
-Use SQL database:       USE globalinfo;"
+Create SQL database:    CREATE DATABASE globalinfo;
+Use SQL database:       USE globalinfo;
 Create continent table: CREATE TABLE continent(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255));
 Create country table:   CREATE TABLE country(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255), continent_id INT, FOREIGN KEY (continent_id) REFERENCES continent(id));
 Create city table:      CREATE TABLE city(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255), country_id INT, FOREIGN KEY (country_id) REFERENCES country(id));
@@ -38,11 +40,13 @@ included in the build project. If you want to try this for yourself, create a Ma
 */
 
 public class Main extends Application {
+    private boolean allowDebugButton = true;
     private String url, username, password;
-    private Connection conn;
+    private static Connection conn;
 
     Buttons buttons = new Buttons();
 
+    Button debugButton;
     ComboBox<String> cityComboBox, convertCToF, convertKphToMph;
     Label tempLabel, humidLabel, windLabel;
     HBox result;
@@ -53,7 +57,6 @@ public class Main extends Application {
         }
         catch(Exception e) {
             System.out.println("Failed to set up JSON data");
-            e.printStackTrace();
             return;
         }
 
@@ -78,31 +81,22 @@ public class Main extends Application {
         convertKphToMph.setOnAction(e -> {
             buttons.convertSpeedComboBox(convertKphToMph, windLabel);
         });
+
+        // Setup functionality for special debug button uwu
+        if(allowDebugButton) {
+            debugButton.setOnAction(e -> {
+                buttons.debugButtonFunction();
+            });
+        }
     }
 
     // Sets up the layout of the window
     private void WindowBasics() {
         cityComboBox = new ComboBox<>();
 
-        // Connect to MariaDB server to retrieve NA cities
-        // TODO add more countries later on
-        try(Statement stmt = conn.createStatement()) {
-            stmt.execute("USE globalinfo;");
-            ResultSet CitiesList = stmt.executeQuery(
-            "SELECT city.name FROM city " +
-                "JOIN country ON city.country_id = country.id " +
-                "JOIN continent ON country.continent_id = continent.id " +
-                "WHERE continent.name = 'North America';"
-            );
-
-            while(CitiesList.next()) {
-                String city = CitiesList.getString("name");
-                cityComboBox.getItems().add(city);
-            }
-        }
-        catch(Exception e) {
-            System.out.println("Failed to get city column from continent foreign key");
-        }
+        // Connect to MariaDB server to retrieve all global cities across each continent
+        CityListLoading cityLoad = new CityListLoading();
+        cityLoad.load7Continents(conn, cityComboBox);
 
         // Temporary values to make sure the app doesn't look weird on launch
         tempLabel = new Label("Temperature: 0.0" + Buttons.DEGREE_C);
@@ -129,6 +123,15 @@ public class Main extends Application {
         tempLayout.getChildren().addAll(convertCToF, convertKphToMph);
         tempLayout.setMinWidth(40);
         tempLayout.setMaxWidth(Double.MAX_VALUE);
+
+        if(allowDebugButton) {
+            // Spacer to separate the conversion ComboBoxes from the Debug button
+            Region debugButtonSpacer = new Region();
+            debugButtonSpacer.setMinHeight(100);
+
+            debugButton = new Button("Debug!!");
+            tempLayout.getChildren().addAll(debugButtonSpacer, debugButton);
+        }
 
         // Make VBox columns side-by-side with HBox row
         result = new HBox(layout, tempLayout);
@@ -170,5 +173,9 @@ public class Main extends Application {
         url = dbConfig.getUrl();
         username = dbConfig.getUsername();
         password = dbConfig.getPassword();
+    }
+
+    public static Connection getMariaConn() {
+        return conn;
     }
 }
