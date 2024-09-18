@@ -33,7 +33,7 @@ INSERT INTO city(name, country_id) VALUES("Philadelphia", 1);
 ------------------------
 
 Username and password of MariaDB server are located in config.json, found in program's root directory. An example is
-included in the build project. If you want to try this for yourself, create a MariaDB database and input credentials
+included in the build project. If you want to try this for yourself, create a MariaDB database, then input credentials
 "url", "username", and "password" into config.json. URL for localhost will always be jdbc:mariadb://127.0.0.1:3306/
 */
 
@@ -48,7 +48,7 @@ public class Main extends Application {
     Label tempLabel, humidLabel, windLabel;
     HBox result;
     public void start(Stage primaryStage) {
-        // Start hby loading MariaDB credentials from config.json file
+        // Start by loading MariaDB credentials from config.json file
         try {
             loadJSONData();
         }
@@ -86,7 +86,7 @@ public class Main extends Application {
         cityComboBox = new ComboBox<>();
 
         // Connect to MariaDB server to retrieve NA cities
-        // TODO add more continents later on
+        // TODO add more countries later on
         try(Statement stmt = conn.createStatement()) {
             stmt.execute("USE globalinfo;");
             ResultSet CitiesList = stmt.executeQuery(
