@@ -19,11 +19,11 @@ import javafx.stage.Stage;
 ------------------------
 Example SQL setup:
 
-Create SQL database:    "CREATE DATABASE globalinfo;"
-Use SQL database:       "USE globalinfo;"
-Create continent table: "CREATE TABLE continent(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255));
-Create country table:   "CREATE TABLE country(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255), continent_id INT, FOREIGN KEY (continent_id) REFERENCES continent(id));
-Create city table:      "CREATE TABLE city(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255), country_id INT, FOREIGN KEY (country_id) REFERENCES country(id));
+Create SQL database:    CREATE DATABASE globalinfo;"
+Use SQL database:       USE globalinfo;"
+Create continent table: CREATE TABLE continent(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255));
+Create country table:   CREATE TABLE country(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255), continent_id INT, FOREIGN KEY (continent_id) REFERENCES continent(id));
+Create city table:      CREATE TABLE city(id INT PRIMARY KEY AUTO_INCREMENT, name varchar(255), country_id INT, FOREIGN KEY (country_id) REFERENCES country(id));
 
 To add contents to these tables:
 INSERT INTO continent(name) VALUES("North America");
@@ -39,7 +39,6 @@ included in the build project. If you want to try this for yourself, create a Ma
 
 public class Main extends Application {
     private String url, username, password;
-    private Properties connConfig;
     private Connection conn;
 
     Buttons buttons = new Buttons();
@@ -151,7 +150,7 @@ public class Main extends Application {
 
     // Sends a connection request to supplied MariaDB server, will fail with invalid credentials
     private void establishMariaConn() {
-        connConfig = new Properties();
+        Properties connConfig = new Properties();
         connConfig.setProperty("user", username);
         connConfig.setProperty("password", password);
 
