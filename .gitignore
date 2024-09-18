@@ -1,3 +1,5 @@
+/config.json
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -8,7 +10,6 @@ target/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
-src/main/java/WindowProject/config.json
 *.iws
 *.iml
 *.ipr
